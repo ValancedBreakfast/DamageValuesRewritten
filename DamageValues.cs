@@ -45,6 +45,7 @@ namespace DamageValues
             }
 
             On.HealthManager.TakeDamage += OnTakeDamage;
+            On.HealthManager.ApplyExtraDamage += OnTickDamage;
         }
 
         private void OnTakeDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
@@ -70,6 +71,32 @@ namespace DamageValues
             while (damage > 0);
 
             damageValue.AddComponent<DamageValue>();
+            damageValue.transform.SetPosition2D(self.transform.position + Vector3.right * (numDigits - 1) / 2 + Vector3.up * 2);
+        }
+
+        private void OnTickDamage(On.HealthManager.orig_ApplyExtraDamage orig, HealthManager self, int amount)
+        {
+            orig(self, amount);
+
+            int damage = amount;
+            var damageValue = new GameObject("Tick Value");
+            int numDigits = 0;
+            do
+            {
+                int i = damage % 10;
+                var digit = new GameObject("Digit " + i);
+                digit.transform.SetParent(damageValue.transform, false);
+                digit.transform.position += Vector3.left * numDigits;
+                var sr = digit.AddComponent<SpriteRenderer>();
+                sr.sprite = _sprites[i];
+                sr.material = new Material(Shader.Find("Sprites/Default"));
+
+                damage /= 10;
+                numDigits++;
+            }
+            while (damage > 0);
+
+            damageValue.AddComponent<TickValue>();
             damageValue.transform.SetPosition2D(self.transform.position + Vector3.right * (numDigits - 1) / 2 + Vector3.up * 2);
         }
 
