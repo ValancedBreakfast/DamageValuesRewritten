@@ -1,22 +1,24 @@
 ﻿using Modding;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace DamageValues
+namespace DamageValuesRewritten
 {
-    public class DamageValues : Mod, IGlobalSettings<Settings>
+    public class DamageValuesRewritten : Mod, IGlobalSettings<Settings>
     {
         public static readonly string ImagesDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); // the path where the mod dll is located
         private List<Sprite> _sprites = new();
         private static int _tileSize;
         private static Settings _settings = new Settings();
+        private bool furyActive = false;
 
         public override string GetVersion() => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-        public DamageValues() : base("DamageValues") { }
+        public DamageValuesRewritten() : base("DamageValuesRewritten") { }
 
         public override void Initialize()
         {
@@ -46,6 +48,7 @@ namespace DamageValues
 
             On.HealthManager.TakeDamage += OnTakeDamage;
             On.HealthManager.ApplyExtraDamage += OnTickDamage;
+            On.NailSlash.SetFury += SetFuryActive;
         }
 
         private void OnTakeDamage(On.HealthManager.orig_TakeDamage orig, HealthManager self, HitInstance hitInstance)
@@ -64,6 +67,7 @@ namespace DamageValues
                 var sr = digit.AddComponent<SpriteRenderer>();
                 sr.sprite = _sprites[i];
                 sr.material = new Material(Shader.Find("Sprites/Default"));
+                sr.sortingOrder = 1;
 
                 damage /= 10;
                 numDigits++;
@@ -72,6 +76,7 @@ namespace DamageValues
 
             damageValue.AddComponent<DamageValue>();
             damageValue.transform.SetPosition2D(self.transform.position + Vector3.right * (numDigits - 1) / 2 + Vector3.up * 2);
+            if (furyActive) damageValue.GetComponent<DamageValue>()._color = new Color(1f, 0.53f, 0.55f);
         }
 
         private void OnTickDamage(On.HealthManager.orig_ApplyExtraDamage orig, HealthManager self, int amount)
@@ -90,6 +95,7 @@ namespace DamageValues
                 var sr = digit.AddComponent<SpriteRenderer>();
                 sr.sprite = _sprites[i];
                 sr.material = new Material(Shader.Find("Sprites/Default"));
+                sr.sortingOrder = 1;
 
                 damage /= 10;
                 numDigits++;
@@ -97,7 +103,16 @@ namespace DamageValues
             while (damage > 0);
 
             damageValue.AddComponent<TickValue>();
-            damageValue.transform.SetPosition2D(self.transform.position + Vector3.right * (numDigits - 1) / 2 + Vector3.up * 2);
+            damageValue.transform.SetPosition2D(self.transform.position + Vector3.right * (numDigits - 1) / 2 + Vector3.up * 0.8f
+                + new Vector3(UnityEngine.Random.Range(-1.2f, 1.2f), UnityEngine.Random.Range(-0.6f, 0.6f), 0f));
+            damageValue.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
+        }
+
+        private void SetFuryActive(On.NailSlash.orig_SetFury orig, NailSlash self, bool set)
+        {
+            orig(self, set);
+
+            furyActive = set;
         }
 
         public void OnLoadGlobal(Settings s) => _settings = s;

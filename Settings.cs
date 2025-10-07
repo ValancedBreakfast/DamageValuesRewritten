@@ -1,4 +1,4 @@
-namespace DamageValues
+namespace DamageValuesRewritten
 {
     public class Settings
     {
